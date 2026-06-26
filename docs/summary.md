@@ -52,7 +52,7 @@
 - 탐지룰은 "시끄러운" 임계값형만 — *느린(low & slow)* 공격은 통과. 별도 룰 보완 필요.
 - 자동 차단(fail2ban)은 미구현 — 차단은 위치가 아니라 **IP/CIDR/ASN**으로. 지오는 분석용(부정확).
 - 위협 인텔은 단일 피드(AbuseIPDB) — Spamhaus·GreyNoise 다피드 교차 시 신뢰도 향상 여지.
-- 웹 노출면(내 개발용 웹 IDE) basic_auth 2차 방어는 보류 중.
+- 웹 노출면(개발용 IDE): basic_auth 2차 방어 **적용 완료**(무인증 401 차단, IDE 로그인과 2겹).
 
 ## 예상 질문과 답
 - *왜 Logstash 안 썼나?* → 리소스 제약 + 변환 불필요(ingest pipeline).

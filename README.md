@@ -50,7 +50,7 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 ## 한계 & 다음 (정직하게)
 - ES/Kibana 인증 off(Caddy basic_auth로 보호) → xpack 인증·TLS 하드닝 예정
 - brute-force 룰은 *시끄러운* 공격만 잡음 → 저속(low-and-slow) 룰 보완 필요
-- 자동 차단(fail2ban)·웹 노출면 2차 인증은 보류 중
+- 자동 차단(fail2ban)은 보류 중 (웹 노출면 2차 인증 basic_auth는 적용 완료)
 - 위협 인텔은 단일 피드 → 다피드 교차로 신뢰도 향상 여지
 
 ## 문서
