@@ -61,6 +61,7 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 - `docs/phase-4-threat-intel.md` — 외부 위협 인텔(AbuseIPDB) 연동 (v2)
 - `docs/host-hardening.md` — 공격자 시점 점검·하드닝
 - `docs/detection-scenarios.md` — 탐지 룰·임계값 근거
+- `scripts/` — SOC 포워더·위협인텔 갱신 Python (시크릿은 환경변수, 코드 미포함)
 
 ## 실행 (Ansible)
 ```bash
