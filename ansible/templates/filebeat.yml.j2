@@ -1,0 +1,22 @@
+filebeat.inputs:
+  - type: journald
+    id: {{ host_name }}-ssh
+    include_matches:
+      - "_SYSTEMD_UNIT=ssh.service"
+    fields: {log_source: ssh, host_name: {{ host_name }}}
+    fields_under_root: true
+  - type: journald
+    id: {{ host_name }}-caddy
+    include_matches:
+      - "_SYSTEMD_UNIT=caddy.service"
+    fields: {log_source: caddy, host_name: {{ host_name }}}
+    fields_under_root: true
+
+output.elasticsearch:
+  hosts: ["http://{{ es_host }}:9200"]
+  index: "seclogs-live"
+
+setup.ilm.enabled: false
+setup.template.name: "seclogs"
+setup.template.pattern: "seclogs-*"
+setup.dashboards.enabled: false

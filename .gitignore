@@ -1,0 +1,21 @@
+# 실값 포함 — 절대 커밋 금지
+inventory.ini
+*.key
+*.pem
+*_key
+*_key.pub
+vault*
+.vault_pass*
+*.retry
+__pycache__/
+
+# 환경/시크릿·로컬 파일
+.env
+*.env
+.DS_Store
+*.log
+
+# 로컬 전용 (외부 발행물·개인 노트는 공개 제외)
+blog/
+docs/positioning.md
+docs/interview-prep.md

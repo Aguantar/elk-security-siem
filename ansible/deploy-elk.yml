@@ -1,0 +1,62 @@
+---
+# 보안 로그 분석 파이프라인(ELK) *구성* 코드화 — 이기종 2노드(oracle ELK서버 + minipc 수집)
+# 전제(부트스트랩 별도): docker(elk_server) · filebeat(log_shippers) 패키지 설치돼 있어야 함.
+#   이 playbook은 *구성(IaC)*을 담당 — repo/패키지 설치를 섞지 않아 멱등·안전.
+#   실행:  ansible-playbook deploy-elk.yml         (oracle passwordless sudo)
+#   minipc: ansible-playbook deploy-elk.yml -K       (sudo 비번)
+#   검증:  ansible-playbook deploy-elk.yml --check --diff
+
+- name: ELK 분석 서버 (Elasticsearch + Kibana)
+  hosts: elk_server
+  become: true
+  vars:
+    elk_dir: "/home/{{ ansible_user }}/elk"
+  tasks:
+    - name: ES 커널 파라미터 (vm.max_map_count)
+      ansible.posix.sysctl:
+        name: vm.max_map_count
+        value: "262144"
+        state: present
+        reload: true
+
+    - name: ELK 디렉토리
+      ansible.builtin.file:
+        path: "{{ elk_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: docker-compose 배포 (ES + Kibana)
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "{{ elk_dir }}/docker-compose.yml"
+        mode: "0644"
+
+    - name: ELK 스택 기동
+      community.docker.docker_compose_v2:
+        project_src: "{{ elk_dir }}"
+        state: present
+
+- name: 로그 수집기 (Filebeat) — 양쪽 호스트
+  hosts: log_shippers
+  become: true
+  tasks:
+    - name: Filebeat 설정 (journald ssh+caddy → ES)
+      ansible.builtin.template:
+        src: filebeat.yml.j2
+        dest: /etc/filebeat/filebeat.yml
+        owner: root
+        mode: "0600"   # 설정파일 root-only (보안)
+      notify: restart filebeat
+
+    - name: Filebeat enable + start
+      ansible.builtin.systemd:
+        name: filebeat
+        enabled: true
+        state: started
+
+  handlers:
+    - name: restart filebeat
+      ansible.builtin.systemd:
+        name: filebeat
+        state: restarted
