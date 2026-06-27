@@ -121,4 +121,4 @@
 - 조치: `xpack.security.enabled=true`(단일노드라 transport TLS 불필요), elastic·kibana_system 비번 설정, Kibana·Filebeat(양 노드)·포워더·위협인텔에 자격 주입(시크릿은 전부 env/vault).
 - 함정 기록: 보안 켜니 기존 Alerting 룰이 옛 API 키로 `security_exception` → 룰 disable/enable로 API 키 재발급해 해결.
 - 결과: 무인증 401 / 인증 200, 전체 파이프라인 정상. Kibana는 xpack 인증 + Caddy basic_auth 2겹.
-- 남은 과제: HTTP TLS, 일상 로그인용 읽기전용 계정(슈퍼유저 elastic 상시 사용 지양).
+- 일상 로그인은 최소권한 개인계정(Kibana 기능 + 보안인덱스 read, 클러스터 슈퍼유저 아님)으로, elastic 슈퍼유저는 설정·비상용으로 봉인. 남은 과제: HTTP TLS.
