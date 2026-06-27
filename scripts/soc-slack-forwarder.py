@@ -21,6 +21,7 @@ import urllib.request
 import datetime
 import pathlib
 import base64
+import time
 
 ES = "http://127.0.0.1:9200"
 INDEX = "security-alerts"
@@ -175,12 +176,19 @@ def post_slack(ip, info, geo, sev, ti):
             ]},
         ]
     }
-    req = urllib.request.Request(
-        WEBHOOK, data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"}, method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=10) as r:
-        return r.read()
+    data = json.dumps(payload).encode()
+    err = None
+    for attempt in range(3):                       # 일시적 실패(Slack 5xx·네트워크) 재시도
+        try:
+            req = urllib.request.Request(
+                WEBHOOK, data=data,
+                headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return r.read()
+        except Exception as e:
+            err = e
+            time.sleep(2 * (attempt + 1))
+    raise err  # 3회 실패 → 호출부에서 처리(쿨다운 미설정 = 다음 실행 재시도)
 
 
 def main():
@@ -228,23 +236,28 @@ def main():
                         "detection": det, "prio": prio}
 
     sent = 0
+    any_fail = False
     for ip, info in best.items():
         last_a = cooldown.get(ip)
         if last_a:
             prev = datetime.datetime.fromisoformat(last_a.replace("Z", "+00:00"))
             if (now() - prev).total_seconds() / 60 < COOLDOWN_MIN:
                 continue
-        geo = enrich(ip)
-        post_slack(ip, info, geo, severity(info["fc"], geo), ti_check(ip))
-        cooldown[ip] = iso(now())
-        sent += 1
+        try:
+            geo = enrich(ip)
+            post_slack(ip, info, geo, severity(info["fc"], geo), ti_check(ip))
+            cooldown[ip] = iso(now())   # 성공 시에만 → 실패는 다음 실행 재시도
+            sent += 1
+        except Exception as e:
+            any_fail = True
+            print(f"전송 실패 {ip}: {e}", file=sys.stderr)
 
     # 하루 지난 쿨다운 기록 정리
     cutoff = now() - datetime.timedelta(days=1)
     cooldown = {ip: t for ip, t in cooldown.items()
                 if datetime.datetime.fromisoformat(t.replace("Z", "+00:00")) > cutoff}
 
-    state["last_seen"] = new_last
+    state["last_seen"] = last_seen if any_fail else new_last  # 실패 있으면 미전진 → 재조회(성공분은 쿨다운 스킵)
     state["ip_cooldown"] = cooldown
     STATE.write_text(json.dumps(state))
     print(f"new_hits={len(hits)} unique_ip={len(best)} sent={sent}")
