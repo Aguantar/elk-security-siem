@@ -14,6 +14,8 @@ filebeat.inputs:
 
 output.elasticsearch:
   hosts: ["http://{{ es_host }}:9200"]
+  username: "{{ es_username | default('elastic') }}"
+  password: "{{ es_password }}"
   index: "seclogs-live"
 
 setup.ilm.enabled: false

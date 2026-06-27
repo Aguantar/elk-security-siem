@@ -20,6 +20,7 @@ import sys
 import urllib.request
 import datetime
 import pathlib
+import base64
 
 ES = "http://127.0.0.1:9200"
 INDEX = "security-alerts"
@@ -29,6 +30,9 @@ PRIV_ACCOUNTS = {"root", "admin", "administrator", "ubuntu", "oracle"}  # 권한
 HOST_LABEL = {"oracle-arm": "오라클 클라우드", "mini-pc": "미니PC 홈서버"}  # host.name → 표시 라벨 (자기 환경의 host.name 값에 맞게 조정)
 WEBHOOK = os.environ.get("SOC_SLACK_WEBHOOK")
 ABUSEIPDB_KEY = os.environ.get("ABUSEIPDB_KEY")  # 없으면 평판 줄 생략(알림은 계속)
+ES_USER = os.environ.get("ES_USER")              # ES 인증(켜져 있으면 필요)
+ES_PASS = os.environ.get("ES_PASS")
+_ES_AUTH = ("Basic " + base64.b64encode(f"{ES_USER}:{ES_PASS}".encode()).decode()) if ES_USER and ES_PASS else None
 
 
 def now():
@@ -41,10 +45,10 @@ def iso(dt):
 
 def es(method, path, body=None):
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(
-        ES + path, data=data,
-        headers={"Content-Type": "application/json"}, method=method,
-    )
+    headers = {"Content-Type": "application/json"}
+    if _ES_AUTH:
+        headers["Authorization"] = _ES_AUTH
+    req = urllib.request.Request(ES + path, data=data, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)
 

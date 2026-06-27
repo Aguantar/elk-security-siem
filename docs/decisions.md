@@ -36,7 +36,7 @@
 - → ES 9200을 **`127.0.0.1` + WireGuard IP(`<WG_ORACLE_IP>`)에만 바인드**. 미니PC Filebeat는 **WireGuard 터널**로 적재, 공개 인터넷엔 미노출.
 
 ## D8. xpack.security 초기 off (정직한 한계)
-- 빠른 반복을 위해 초기엔 보안 끔. **단, 보안 직무 프로젝트에서 ES 인증 off는 아이러니** → **하드닝 단계에서 basic auth(+TLS) 활성화 예정**. "초기 iteration엔 off, 이후 켰다"는 의사결정 + 보안 인지 스토리로 전환.
+- 빠른 반복을 위해 초기엔 보안 끔. **단, 보안 직무 프로젝트에서 ES 인증 off는 아이러니** → **하드닝 단계에서 xpack 네이티브 인증 활성화 완료(D23).** "초기 iteration엔 off, 이후 켰다"는 의사결정 + 보안 인지 스토리로 전환.
 
 ## D9. ES 버전 8.18.1 선택
 - 9.x보다 **8.x가 문서·트러블슈팅 성숙**. arm64 이미지 검증 완료. (Filebeat는 8.19.x 호스트 패키지 — 동일 major 내 Filebeat≥ES 호환.)
@@ -58,7 +58,7 @@
 
 ## D13. Kibana 보호를 Caddy basic_auth로 (xpack off 보완)
 - Kibana 자체 인증 off 상태(D8)라 공개 노출 시 위험 → **Caddy basic_auth(bcrypt)**로 1차 보호. ES 포트는 비공개(D7).
-- 추후 하드닝: ES/Kibana xpack 인증 활성화 시 Caddy basic_auth는 제거 가능.
+- 이후 xpack 네이티브 인증 활성화 완료(D23) → 현재 xpack 인증 + Caddy basic_auth 2겹(basic_auth는 추가 방어로 유지).
 
 ## D14. user.name과 source.geo 둘 다 유지 (필드 선택 근거)
 - 질문: user.name은 빈값 많은데 빼도 되지 않나? (국가가 더 그림이 됨)
@@ -74,10 +74,10 @@
 - Top IP는 폐기 X, **용도 축소**: 집요한 단일 공격자 = 차단/fail2ban 후보 명단.
 
 ## D16. 라이브 SIEM(Kibana) URL을 공개하지 않음
-- Kibana 자체 인증 off(D8)라 Caddy basic_auth *한 겹*만 보호. 공개 URL = 단일 인증 관제 콘솔을 광고하는 꼴.
+- 이제 Kibana는 xpack 인증 + Caddy basic_auth 2겹(D23)이지만, 공개 URL 자체가 관제 콘솔을 광고하는 꼴이라 비공개 유지.
 - 공격자는 노출된 Kibana를 스캔함(우리 로그에 Shodan 적중). cert transparency로도 도메인 발견 가능.
 - 보안 직무에선 *상시 공개 노출 자체가 마이너스 신호* → **공개 문서엔 라이브 링크 대신 스크린샷으로.**
-- (라이브로 가려면 xpack 인증 + 읽기전용 계정 + TLS 하드닝이 선행. 마감상 스크린샷이 정답.)
+- (xpack 인증은 활성화됨(D23). 라이브 공개엔 읽기전용 계정 + HTTP TLS가 추가로 필요. 현재는 스크린샷으로.)
 - 관제 콘솔을 공개하지 않는 판단 자체가 보안 인지의 근거.
 
 ## D17. Slack 알림을 Kibana 커넥터 대신 독립 포워더로 (basic 라이선스 제약)
@@ -115,3 +115,10 @@
 - `/blacklist`(글로벌 top-10k)는 우리 특정 공격자를 다 못 덮음(주 공격자가 개별 100%인데 블랙리스트엔 없던 사례).
 - 그래서 **벌크 enrich(근사·상시·무료)** + **알림 시 per-IP /check(정밀·탐지수만큼만 호출)**로 분리. 비용·커버리지·정밀도 균형.
 - enrich는 ES enrich 정책(match on ip) + ingest 프로세서, 피드는 일일 systemd 타이머로 갱신. 평판은 정보 표시용이고 심각도는 영향 기반 유지. 키는 `/etc/threat-intel.env`(600).
+
+## D23. ES/Kibana xpack 네이티브 인증 활성화 (관제 스택이 안 잠긴 아이러니 해소)
+- 초기엔 빠른 반복 위해 ES 보안 off였음. 보안 프로젝트에서 ES/Kibana가 무인증인 건 가장 아픈 모순 → 하드닝에서 해소.
+- 조치: `xpack.security.enabled=true`(단일노드라 transport TLS 불필요), elastic·kibana_system 비번 설정, Kibana·Filebeat(양 노드)·포워더·위협인텔에 자격 주입(시크릿은 전부 env/vault).
+- 함정 기록: 보안 켜니 기존 Alerting 룰이 옛 API 키로 `security_exception` → 룰 disable/enable로 API 키 재발급해 해결.
+- 결과: 무인증 401 / 인증 200, 전체 파이프라인 정상. Kibana는 xpack 인증 + Caddy basic_auth 2겹.
+- 남은 과제: HTTP TLS, 일상 로그인용 읽기전용 계정(슈퍼유저 elastic 상시 사용 지양).

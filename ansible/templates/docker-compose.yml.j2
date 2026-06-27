@@ -4,7 +4,7 @@ services:
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
+      - xpack.security.enabled=true
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - bootstrap.memory_lock=true
     ulimits:
@@ -22,6 +22,8 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - SERVER_PUBLICBASEURL=https://{{ kibana_domain }}
       - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY={{ kibana_encryption_key }}
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD={{ kibana_system_password }}
     ports:
       - "127.0.0.1:5601:5601"
     depends_on:

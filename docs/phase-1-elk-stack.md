@@ -12,7 +12,7 @@
 
 ## 완료 (Oracle)
 - **ES + Kibana 8.18.1 (arm64)** docker-compose 기동. `/home/ubuntu/elk/docker-compose.yml`.
-  - single-node, 힙 `-Xms1g -Xmx1g`, `xpack.security.enabled=false`(초기), `vm.max_map_count=262144`(/etc/sysctl.d).
+  - single-node, 힙 `-Xms1g -Xmx1g`, `xpack.security.enabled=false`(초기 → 하드닝에서 true), `vm.max_map_count=262144`(/etc/sysctl.d).
   - 포트 비공개: ES `127.0.0.1:9200` + `<WG_ORACLE_IP>:9200`(WireGuard)만, Kibana `127.0.0.1:5601`만.
 - **Filebeat 8.19.x 호스트 패키지** 설치(Elastic 공식 apt repo, 서명). `/etc/filebeat/filebeat.yml`.
   - journald 입력 2개: `_SYSTEMD_UNIT=ssh.service`, `caddy.service`. 필드 `log_source`,`host_name=oracle`.

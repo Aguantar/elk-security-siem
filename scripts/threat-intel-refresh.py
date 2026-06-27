@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """AbuseIPDB 블랙리스트 일일 갱신 → ES enrich 소스 재적재 → 정책 재실행."""
-import json, os, urllib.request, urllib.parse, sys
+import json, os, urllib.request, urllib.parse, sys, base64
 ES="http://127.0.0.1:9200"
 KEY=os.environ.get("ABUSEIPDB_KEY")
+ES_USER=os.environ.get("ES_USER"); ES_PASS=os.environ.get("ES_PASS")
+_ES_AUTH=("Basic "+base64.b64encode(f"{ES_USER}:{ES_PASS}".encode()).decode()) if ES_USER and ES_PASS else None
 def es(method,p,b=None,raw=False):
     data=(b.encode() if raw else json.dumps(b).encode()) if b is not None else None
-    r=urllib.request.Request(ES+p,data=data,headers={"Content-Type":"application/json"},method=method)
+    h={"Content-Type":"application/json"}
+    if _ES_AUTH: h["Authorization"]=_ES_AUTH
+    r=urllib.request.Request(ES+p,data=data,headers=h,method=method)
     try: return json.load(urllib.request.urlopen(r,timeout=60))
     except urllib.error.HTTPError as e: return {"_err":e.code,"body":e.read().decode()[:200]}
 

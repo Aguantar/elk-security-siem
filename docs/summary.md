@@ -48,7 +48,7 @@
 - **Phase 4 (v2): 외부 위협 인텔 연동** — AbuseIPDB로 우리 공격자 평판 교차검증(상위 200개 중 50% 신고 이력·누적 140만 건, 27% 미신고). ES enrich 벌크 태깅 + 알림시 per-IP 조회 + 일일 갱신 타이머. v1의 "내가 본 것만 안다" 한계를 외부 대조로 극복. (`phase-4-threat-intel.md`)
 
 ## 한계 (정직하게) → 다음
-- ES/Kibana 인증 off(Caddy basic_auth로 1차 보호) → **xpack 인증·TLS 하드닝** 예정.
+- ES/Kibana **xpack 네이티브 인증 활성화 완료** (+ Caddy basic_auth 2겹). HTTP TLS는 추후.
 - 탐지룰은 "시끄러운" 임계값형만 — *느린(low & slow)* 공격은 통과. 별도 룰 보완 필요.
 - 자동 차단(fail2ban)은 미구현 — 차단은 위치가 아니라 **IP/CIDR/ASN**으로. 지오는 분석용(부정확).
 - 위협 인텔은 단일 피드(AbuseIPDB) — Spamhaus·GreyNoise 다피드 교차 시 신뢰도 향상 여지.
