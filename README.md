@@ -44,18 +44,18 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 2. **known-good 아닌 성공 로그인** — IP가 아니라 *인증방식+계정+키지문* 기준 (동적 IP는 신뢰 못함)
 3. **웹 스캐너** — 한 IP가 여러 경로 + `/.env`·`/.git/config` 등 민감경로 + 404 폭증
 
-## 주요 의사결정 (→ `docs/decisions.md`, D1~D23)
+## 주요 의사결정 (→ `docs/decisions.md`, D1~D24)
 왜 ES(검색)·왜 Filebeat(리소스)·왜 journald(샌드박스)·왜 ASN(카디널리티)·왜 임계값 20(분포)·왜 Slack을 포워더로(라이선스)·왜 심각도를 신호로·왜 위협인텔 2계층… "왜 X 대신 Y"를 전부 기록.
 
 ## 한계 & 다음 (정직하게)
 - ES/Kibana **xpack 인증 활성화 완료** (+ Caddy basic_auth 2겹). HTTP TLS는 추후 과제
 - brute-force 룰은 *시끄러운* 공격만 잡음 → 저속(low-and-slow) 룰 보완 필요
-- 자동 차단(fail2ban)은 보류 중 (웹 노출면 2차 인증 basic_auth는 적용 완료)
+- 자동 차단(fail2ban) **적용 완료** — SSH 5분 20회→자동 IP 차단(SIEM과 동일 임계값), 허용목록으로 lockout 방지. (웹 2차 인증 basic_auth도 적용 완료)
 - 위협 인텔은 단일 피드 → 다피드 교차로 신뢰도 향상 여지
 
 ## 문서
 - `docs/summary.md` — 한 장 요약
-- `docs/decisions.md` — 기술 선택 근거(D1~D23)
+- `docs/decisions.md` — 기술 선택 근거(D1~D24)
 - `docs/phase-0~2-*.md` — 수집·파싱·시각화·Ansible 구축 기록(트러블 포함)
 - `docs/phase-3-slack-alerting.md` — 탐지→Slack 알림·심각도 설계
 - `docs/phase-4-threat-intel.md` — 외부 위협 인텔(AbuseIPDB) 연동 (v2)

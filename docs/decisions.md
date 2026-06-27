@@ -122,3 +122,10 @@
 - 함정 기록: 보안 켜니 기존 Alerting 룰이 옛 API 키로 `security_exception` → 룰 disable/enable로 API 키 재발급해 해결.
 - 결과: 무인증 401 / 인증 200, 전체 파이프라인 정상. Kibana는 xpack 인증 + Caddy basic_auth 2겹.
 - 일상 로그인은 최소권한 개인계정(Kibana 기능 + 보안인덱스 read, 클러스터 슈퍼유저 아님)으로, elastic 슈퍼유저는 설정·비상용으로 봉인. 남은 과제: HTTP TLS.
+
+## D24. 자동 대응(fail2ban) — 탐지 임계값과 일치하는 호스트 레벨 자동 차단
+- 탐지(SIEM)만으론 반쪽 → 오라클에 fail2ban으로 SSH 자동 차단. **5분 20회 = SIEM 룰과 동일 임계값**("탐지하는 기준으로 차단까지").
+- 안전: fail2ban 전용 iptables 체인(기존 방화벽 불변) + `ignoreip` 허용목록(localhost·WireGuard·known-good 내 IP)으로 자기 lockout 방지. bantime 1h, systemd 백엔드(journald 감시).
+- 검증: 차단→iptables REJECT 생성, 해제→제거 확정.
+- 정직: password 인증 OFF·키전용이라 brute-force 성공 자체가 불가 → fail2ban 실이득은 *노이즈/리소스 감소 + 대응 루프 시연*. 진짜 차단은 이미 구조(키전용)가 함.
+- 설계: SIEM(ES)과 독립(병렬, 자체 로그 감시). SIEM-트리거 차단(SOAR)은 라이브 방화벽 직접조작 리스크라 미채택.
