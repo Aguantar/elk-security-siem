@@ -19,7 +19,7 @@
 - **Kibana 룰화(나중)**: ES query 룰 — query `event.outcome:failure NOT known-good`, **group by source.ip**, threshold ≥20 / 5m, check 1m. 액션 ① index(`security-alerts` 큐) ② Slack.
 - 검증 쿼리: `terms source.ip` → `date_histogram 5m` → `max_bucket(peak5m)`, peak≥20 필터.
 
-## 시나리오 2 — known-good 아닌 *성공* 로그인 (설계됨, 미검증)
+## 시나리오 2 — known-good 아닌 *성공* 로그인 (라이브 Kibana 룰 가동, 2026-06-27)
 - **로직**: `event.outcome=success` AND (source.ip ∉ known-good **또는** 인증키 ∉ authorized_keys **또는** auth=password).
 - 근거: 성공 179건 전부 publickey+알려진 계정이었고, <HOME_IP_PREV>(본인) 1건이 IP목록 밖이었음(§phase-1b). → **IP보다 인증방식+계정+키지문**이 견고.
 - 침해 시 레드알럿.
@@ -70,7 +70,7 @@
 
 **End-to-end 발화 검증**: 임계값을 임시 2로 낮춰 → 라이브 공격자(92.118.39.x)에 발화 → `security-alerts` 큐에 alert doc 3건 적재 확인 → **임계값 20 복원 + 데모 doc 삭제**. = 탐지→알림큐 파이프라인 실작동 증명.
 
-**대기**: Slack 통보 액션(웹훅 확보 시 5분). 시나리오 2·3 룰화는 동일 패턴으로 확장 가능.
+시나리오 1·2는 라이브 Kibana 룰로 가동 + 포워더가 Slack 전송(시나리오 2는 "의심 성공 로그인 — 침해 가능성" 별도 카드, MITRE T1078). 시나리오 3(웹 스캐너)은 동일 패턴으로 확장 가능.
 
 ## SOC 대시보드 + 알림 큐 (2026-06-25)
 운영 우선 SOC 대시보드 구성(Kibana saved objects API로 생성):

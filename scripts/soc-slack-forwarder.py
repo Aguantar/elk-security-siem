@@ -118,16 +118,6 @@ def post_slack(ip, info, geo, sev, ti):
         f"{h} ({HOST_LABEL[h]})" if h in HOST_LABEL else h
         for h in geo["target_hosts"]) if geo["target_hosts"] else "Unknown"
 
-    # 심각도 사유 — 왜 이 등급인지 한 줄로
-    if geo["success_count"] > 0:
-        reason = "외부 IP에서 로그인 성공, 침해 의심"
-    elif any(u.lower() in PRIV_ACCOUNTS for u in geo["top_users"]):
-        reason = "권한·실계정(root/admin 등) 표적"
-    elif info["fc"] >= 100:
-        reason = "5분 100회 이상, 집요한 대량 시도"
-    else:
-        reason = "표준적인 봇 사전대입"
-
     # 악성 평판 — 점수가 0~100 '확신도'임을 명시
     ti_txt = ""
     if ti:
@@ -140,25 +130,48 @@ def post_slack(ip, info, geo, sev, ti):
         ti_txt = (f"*악성 평판:*  악성 확신도 {ti['score']}/100, "
                   f"전 세계 {ti['reports']}건 신고 ({level})\n")
 
-    text = (
-        f"*공격 IP:*  `{ip}`  (국가: {geo['country']})\n"
-        f"*표적 서버:*  {hosts_txt}\n"
-        f"*공격 방식:*  5분간 {info['fc']}회 로그인 실패 (탐지 기준 20회 초과)\n"
-        f"*노린 계정:*  {users_txt}\n"
-        f"{ti_txt}"
-        f"*심각도:*  {sev.upper()} — {reason}\n"
-        f"*ASN(호스팅):*  {geo['asn']}\n"
-        f"*탐지시각(UTC):*  {info['ts']}"
-    )
+    if info.get("detection") == "suspicious_success":
+        # 침해 의심 — known-good 아닌 외부 IP의 로그인 '성공'
+        header = "의심 성공 로그인 — 침해 가능성"
+        mitre = "MITRE ATT&CK: T1078 Valid Accounts"
+        text = (
+            f"*출처 IP:*  `{ip}`  (국가: {geo['country']})\n"
+            f"*대상 서버:*  {hosts_txt}\n"
+            f"*상황:*  known-good 아닌 외부 IP에서 **로그인 성공**\n"
+            f"*계정:*  {users_txt}\n"
+            f"{ti_txt}"
+            f"*심각도:*  CRITICAL — 침해 의심, 즉시 확인 필요\n"
+            f"*ASN(호스팅):*  {geo['asn']}\n"
+            f"*탐지시각(UTC):*  {info['ts']}"
+        )
+    else:
+        # SSH brute-force
+        header = "SSH Brute-force 탐지"
+        mitre = "MITRE ATT&CK: T1110.001 Password Guessing"
+        if geo["success_count"] > 0:
+            reason = "외부 IP에서 로그인 성공, 침해 의심"
+        elif any(u.lower() in PRIV_ACCOUNTS for u in geo["top_users"]):
+            reason = "권한·실계정(root/admin 등) 표적"
+        elif info["fc"] >= 100:
+            reason = "5분 100회 이상, 집요한 대량 시도"
+        else:
+            reason = "표준적인 봇 사전대입"
+        text = (
+            f"*공격 IP:*  `{ip}`  (국가: {geo['country']})\n"
+            f"*표적 서버:*  {hosts_txt}\n"
+            f"*공격 방식:*  5분간 {info['fc']}회 로그인 실패 (탐지 기준 20회 초과)\n"
+            f"*노린 계정:*  {users_txt}\n"
+            f"{ti_txt}"
+            f"*심각도:*  {sev.upper()} — {reason}\n"
+            f"*ASN(호스팅):*  {geo['asn']}\n"
+            f"*탐지시각(UTC):*  {info['ts']}"
+        )
     payload = {
         "blocks": [
-            {"type": "header",
-             "text": {"type": "plain_text", "text": "SSH Brute-force 탐지"}},
+            {"type": "header", "text": {"type": "plain_text", "text": header}},
             {"type": "section", "text": {"type": "mrkdwn", "text": text}},
             {"type": "context", "elements": [
-                {"type": "mrkdwn",
-                 "text": ("MITRE ATT&CK: T1110.001 Password Guessing  |  "
-                          f"rule: {info['rule']}  |  임계값: 5분 내 실패 20회 이상")}
+                {"type": "mrkdwn", "text": f"{mitre}  |  rule: {info['rule']}"}
             ]},
         ]
     }
@@ -198,7 +211,7 @@ def main():
     hits = es("POST", f"/{INDEX}/_search", q)["hits"]["hits"]
 
     new_last = last_seen
-    best = {}  # ip -> 가장 높은 failure_count 가진 탐지
+    best = {}  # ip -> 우선순위 높은 탐지 (성공 로그인 > 높은 실패횟수)
     for h in hits:
         s = h["_source"]
         ts = s["@timestamp"]
@@ -208,8 +221,11 @@ def main():
         if not ip:
             continue
         fc = int(s.get("failure_count", 0) or 0)
-        if ip not in best or fc > best[ip]["fc"]:
-            best[ip] = {"fc": fc, "ts": ts, "rule": s.get("rule", "")}
+        det = s.get("detection")
+        prio = (1 if det == "suspicious_success" else 0, fc)
+        if ip not in best or prio > best[ip]["prio"]:
+            best[ip] = {"fc": fc, "ts": ts, "rule": s.get("rule", ""),
+                        "detection": det, "prio": prio}
 
     sent = 0
     for ip, info in best.items():
