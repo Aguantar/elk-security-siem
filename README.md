@@ -44,18 +44,18 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 2. **known-good 아닌 성공 로그인** — IP가 아니라 *인증방식+계정+키지문* 기준 (동적 IP는 신뢰 못함)
 3. **웹 스캐너** — 한 IP가 여러 경로 + `/.env`·`/.git/config` 등 민감경로 + 404 폭증
 
-## 주요 의사결정 (→ `docs/decisions.md`, D1~D24)
+## 주요 의사결정 (→ `docs/decisions.md`, D1~D28)
 왜 ES(검색)·왜 Filebeat(리소스)·왜 journald(샌드박스)·왜 ASN(카디널리티)·왜 임계값 20(분포)·왜 Slack을 포워더로(라이선스)·왜 심각도를 신호로·왜 위협인텔 2계층… "왜 X 대신 Y"를 전부 기록.
 
 ## 한계 & 다음 (정직하게)
 - ES/Kibana **xpack 인증 활성화 완료** (+ Caddy basic_auth 2겹). HTTP TLS는 추후 과제
 - brute-force 룰은 *시끄러운* 공격만 잡음 → 저속(low-and-slow) 룰 보완 필요
-- 자동 차단(fail2ban) **적용 완료** — SSH 5분 20회→자동 IP 차단(SIEM과 동일 임계값), 허용목록으로 lockout 방지. (웹 2차 인증 basic_auth도 적용 완료)
+- 자동 차단(fail2ban) **적용 완료** — SSH 5분 5회→자동 IP 차단(알림 임계값 20보다 공격적 — "알림받을 가치"와 "차단할 가치"를 의도적으로 분리), 허용목록으로 lockout 방지. (웹 2차 인증 basic_auth도 적용 완료)
 - 위협 인텔은 단일 피드 → 다피드 교차로 신뢰도 향상 여지
 
 ## 문서
 - `docs/summary.md` — 한 장 요약
-- `docs/decisions.md` — 기술 선택 근거(D1~D24)
+- `docs/decisions.md` — 기술 선택 근거(D1~D28)
 - `docs/phase-0~2-*.md` — 수집·파싱·시각화·Ansible 구축 기록(트러블 포함)
 - `docs/phase-3-slack-alerting.md` — 탐지→Slack 알림·심각도 설계
 - `docs/phase-4-threat-intel.md` — 외부 위협 인텔(AbuseIPDB) 연동 (v2)
@@ -72,4 +72,20 @@ ansible-playbook deploy-elk.yml           # 적용 (멱등: 재실행 시 change
 ```
 
 ## 스크린샷
-> Kibana 대시보드·Slack 알림 캡처를 `docs/img/`에 추가 예정 (공격 지도 · Top ASN · SOC 대시보드 · 탐지 알림 카드). *자기 IP·도메인은 가림 처리.*
+> Kibana·Slack·서버 캡처. **자기 IP·도메인·계정·호스트명은 가림 처리.** (이미지: `docs/img/`)
+
+**핵심 (실데이터)**
+- `soc-dashboard.png` — Kibana SOC 관제 대시보드 (침해·추이·타겟 자산·지도)
+- `attack-map.png` — 공격 출발지 세계 지도 (국가별 공격량)
+- `top-asn.png` — 공격 출처 ASN Top (DigitalOcean ≈ 34%)
+- `slack-bruteforce.png` — Slack brute-force 탐지 카드 (심각도·MITRE)
+
+**탐지 · 대응 · 하드닝**
+- `slack-suspicious-success.png` — known-good 아닌 성공 로그인 알림(침해 가능성)
+- `fail2ban-ban.png` — fail2ban 자동 차단 (iptables)
+- `es-auth.png` — ES/Kibana xpack 인증 적용
+
+**v2 · 자동화**
+- `slack-threat-intel.png` — 위협 인텔(AbuseIPDB) 붙은 탐지 카드
+- `reputation-dist.png` — 상위 공격자 평판 분포 (50% 상습범·27% 미신고)
+- `ansible-recap.png` — Ansible 멱등 배포 (PLAY RECAP, changed=0)
