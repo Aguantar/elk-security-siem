@@ -40,16 +40,17 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 8. **배포 자동화** — 설정 배포를 Ansible playbook으로 코드화(멱등)
 
 ## 탐지 시나리오 (→ `docs/detection-scenarios.md`)
-1. **SSH brute-force** — 한 IP가 5분 내 실패 ≥20회 (임계값은 *분포 분석*으로: 사람 행동과 분리되는 골짜기)
+1. **SSH brute-force** — 5분 20회 임계값을 *분포 분석*으로 도출. *단독 알림은 fail2ban(5/5분) 차단 도입 후 **은퇴** — 버스트는 fail2ban이 전담, 임계값 분석은 탐지선 설계 사례로 유지*
 2. **known-good 아닌 성공 로그인** — IP가 아니라 *인증방식+계정+키지문* 기준 (동적 IP는 신뢰 못함)
 3. **웹 스캐너** — 한 IP가 여러 경로 + `/.env`·`/.git/config` 등 민감경로 + 404 폭증
+4. **저속·계정 스프레이** — 한 IP가 12h 내 여러 계정을 저속(≥10회)으로 시도 → *버스트 방어(fail2ban·brute-force룰)가 못 보는 축*을 탐지 (MITRE T1110.003)
 
 ## 주요 의사결정 (→ `docs/decisions.md`, D1~D28)
 왜 ES(검색)·왜 Filebeat(리소스)·왜 journald(샌드박스)·왜 ASN(카디널리티)·왜 임계값 20(분포)·왜 Slack을 포워더로(라이선스)·왜 심각도를 신호로·왜 위협인텔 2계층… "왜 X 대신 Y"를 전부 기록.
 
 ## 한계 & 다음 (정직하게)
 - ES/Kibana **xpack 인증 활성화 완료** (+ Caddy basic_auth 2겹). HTTP TLS는 추후 과제
-- brute-force 룰은 *시끄러운* 공격만 잡음 → 저속(low-and-slow) 룰 보완 필요
+- **탐지 vs 예방 정리**: brute-force 20/5분 알림은 fail2ban(5/5분)과 같은 *버스트* 영역 → 차단이 20 전에 선점하니 단독 알림은 중복 → **은퇴**. 탐지의 무게는 **차단이 못 보는 축**(성공 로그인=침해, 저속·계정 스프레이=시나리오 4)으로 이동. (inline 차단을 넣으면 higher-threshold 탐지 알림은 구조적으로 중복이 된다는 실증.)
 - 자동 차단(fail2ban) **적용 완료** — SSH 5분 5회→자동 IP 차단(알림 임계값 20보다 공격적 — "알림받을 가치"와 "차단할 가치"를 의도적으로 분리), 허용목록으로 lockout 방지. (웹 2차 인증 basic_auth도 적용 완료)
 - 위협 인텔은 단일 피드 → 다피드 교차로 신뢰도 향상 여지
 

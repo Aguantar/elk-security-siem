@@ -145,6 +145,20 @@ def post_slack(ip, info, geo, sev, ti):
             f"*ASN(호스팅):*  {geo['asn']}\n"
             f"*탐지시각(UTC):*  {info['ts']}"
         )
+    elif info.get("detection") == "low_and_slow":
+        # 저속·계정 스프레이 — 버스트 방어(fail2ban·brute-force 룰)를 회피하는 장기 저속 실패
+        header = "저속·계정 스프레이 의심"
+        mitre = "MITRE ATT&CK: T1110.003 Password Spraying"
+        text = (
+            f"*공격 IP:*  `{ip}`  (국가: {geo['country']})\n"
+            f"*표적 서버:*  {hosts_txt}\n"
+            f"*상황:*  12시간 내 {info['fc']}회 저속 실패 — 버스트 방어(fail2ban·5분룰) 회피\n"
+            f"*노린 계정:*  {users_txt}\n"
+            f"{ti_txt}"
+            f"*심각도:*  {sev.upper()} — 저속·다계정 시도(rate 회피형)\n"
+            f"*ASN(호스팅):*  {geo['asn']}\n"
+            f"*탐지시각(UTC):*  {info['ts']}"
+        )
     else:
         # SSH brute-force
         header = "SSH Brute-force 탐지"
@@ -230,7 +244,8 @@ def main():
             continue
         fc = int(s.get("failure_count", 0) or 0)
         det = s.get("detection")
-        prio = (1 if det == "suspicious_success" else 0, fc)
+        rank = 2 if det == "suspicious_success" else (1 if det == "low_and_slow" else 0)
+        prio = (rank, fc)
         if ip not in best or prio > best[ip]["prio"]:
             best[ip] = {"fc": fc, "ts": ts, "rule": s.get("rule", ""),
                         "detection": det, "prio": prio}
