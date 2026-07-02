@@ -45,7 +45,7 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 3. **웹 스캐너** — 한 IP가 여러 경로 + `/.env`·`/.git/config` 등 민감경로 + 404 폭증
 4. **저속·계정 스프레이** — 한 IP가 12h 내 여러 계정을 저속(≥10회)으로 시도 → *버스트 방어(fail2ban·brute-force룰)가 못 보는 축*을 탐지 (MITRE T1110.003)
 
-## 주요 의사결정 (→ `docs/decisions.md`, D1~D28)
+## 주요 의사결정 (→ `docs/decisions.md`, D1~D29)
 왜 ES(검색)·왜 Filebeat(리소스)·왜 journald(샌드박스)·왜 ASN(카디널리티)·왜 임계값 20(분포)·왜 Slack을 포워더로(라이선스)·왜 심각도를 신호로·왜 위협인텔 2계층… "왜 X 대신 Y"를 전부 기록.
 
 ## 한계 & 다음 (정직하게)
@@ -56,7 +56,7 @@ Elasticsearch · Kibana · Filebeat · ES ingest pipeline(grok/GeoIP/ASN) · ES 
 
 ## 문서
 - `docs/summary.md` — 한 장 요약
-- `docs/decisions.md` — 기술 선택 근거(D1~D28)
+- `docs/decisions.md` — 기술 선택 근거(D1~D29)
 - `docs/phase-0~2-*.md` — 수집·파싱·시각화·Ansible 구축 기록(트러블 포함)
 - `docs/phase-3-slack-alerting.md` — 탐지→Slack 알림·심각도 설계
 - `docs/phase-4-threat-intel.md` — 외부 위협 인텔(AbuseIPDB) 연동 (v2)
