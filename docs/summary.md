@@ -19,8 +19,8 @@
 
 ## 핵심 수치
 - **10만+ 보안 이벤트** 단일 인덱스(`seclogs-live`)에 통합 (SSH·웹).
-- SSH brute-force **고유 공격 IP 3,146개 / 89개국**.
-- **DigitalOcean 한 곳이 SSH 공격의 ~34%**(20,131건) — IP로는 안 보이던 신호.
+- SSH brute-force **고유 공격 IP 수천 개 / 90여 개국** *(2026-06 분석 기준)*.
+- **DigitalOcean 한 곳이 SSH 공격 최다**(2026-06 약 1/3) — IP로는 안 보이던 신호.
 - 노린 계정: root·admin·ubuntu·oracle. **외부 성공 로그인 0건**(전부 known-good IP) = 방어 정상.
 - **위협 인텔 교차검증**: 상위 공격자 200개 중 50%가 글로벌 상습범(누적 140만 건), 27% 미신고.
 
@@ -29,7 +29,7 @@
 "Failed password ... from 209.38.23.x"   (텍스트)
  → grok 파싱:  source.ip, user.name
  → 인리치:     +국가 +좌표 +ASN(DigitalOcean)
- → 집계:       IP(롱테일 15%, 약함)  →  ASN(DigitalOcean 34%, 신호)
+ → 집계:       IP(롱테일 15%, 약함)  →  ASN(DigitalOcean 최다, 신호)
  → 인사이트:   "공격의 1/3이 한 클라우드 임대서버. 집계 단위를 카디널리티에 맞춰야 신호가 보인다."
 ```
 
@@ -37,7 +37,7 @@
 - **ES vs ClickHouse**: 로그 검색·보안UI엔 역색인 ES. (분석은 ClickHouse 유지 — 용도 분리)
 - **Filebeat vs Logstash**: 12GB 제약 → 가벼운 Filebeat, 변환은 ES ingest pipeline.
 - **journald 단일 소스**: Caddy 파일로그가 systemd 샌드박스에 막혀 stdout→journald로 통일.
-- **집계 단위 = 카디널리티**: IP 3,146개라 ASN으로 올려 신호 확보(D15).
+- **집계 단위 = 카디널리티**: IP 수천 개라 ASN으로 올려 신호 확보(D15).
 - **노이즈 필터링**: 내 관리 IP(<HOME_IP> 등) 제외 → 순수 공격만. "정상/공격 구분"이 SOC 기본기.
 
 ## 완료된 단계 (Phase)
@@ -57,7 +57,7 @@
 ## 예상 질문과 답
 - *왜 Logstash 안 썼나?* → 리소스 제약 + 변환 불필요(ingest pipeline).
 - *인덱스 설계는?* → 단일 데이터스트림 seclogs-live, host_name·log_source로 분리, ILM 롤오버(D11).
-- *왜 ASN을 봤나?* → IP는 봇넷이 분산(3,146개, top10 15%)이라 호스팅업체로 묶으니 DigitalOcean 34%.
+- *왜 ASN을 봤나?* → IP는 봇넷이 분산(수천 개, top10 15%)이라 호스팅업체로 묶으니 DigitalOcean 최다.
 - *데이터 유실/중복은?* → Filebeat registry로 at-least-once, journald 기준 재개.
 - *12GB에서 ES 안 죽게?* → 힙 1g cap, single-node, 무스왑이라 OOM 방지.
 
@@ -67,4 +67,4 @@
 **비유**: CCTV 영상이 그냥 쌓이기만 하던 걸 → **관제실 모니터 + 자동 경보 + 세계지도 + 자동 시공 설계도**로 바꾼 것.
 - 모으기(수집) → 정리(파싱) → 정보 붙이기(GeoIP/ASN) → 보여주기(대시보드) → 가려내기(탐지룰) → 복제(Ansible)
 
-**실데이터(진짜라는 증거)**: 한 달 침입 시도 3만+, 가장 노린 계정 admin·root, 공격의 1/3이 DigitalOcean 클라우드, 89개국, 한 IP는 5분에 170번 — **실제 뚫린 적은 0번**.
+**실데이터(진짜라는 증거)**: 한 달 침입 시도 3만+, 가장 노린 계정 admin·root, 공격의 약 1/3이 DigitalOcean 클라우드, 90여 개국, 한 IP는 5분에 170번 — **실제 뚫린 적은 0번**. *(수치는 2026-06 기준)*
