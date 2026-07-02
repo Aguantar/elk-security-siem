@@ -73,20 +73,26 @@ ansible-playbook deploy-elk.yml           # 적용 (멱등: 재실행 시 change
 ```
 
 ## 스크린샷
-> Kibana·Slack·서버 캡처. **자기 IP·도메인·계정·호스트명은 가림 처리.** (이미지: `docs/img/`)
+> 자기 IP·도메인·계정·호스트명은 가림, 공격자 IP는 끝옥텟 마스킹. (`docs/img/`)
 
-**핵심 (실데이터)**
-- `soc-dashboard.png` — Kibana SOC 관제 대시보드 (침해·추이·타겟 자산·지도)
-- `attack-map.png` — 공격 출발지 세계 지도 (국가별 공격량)
-- `top-asn.png` — 공격 출처 ASN Top (DigitalOcean ≈ 34%)
-- `slack-bruteforce.png` — Slack brute-force 탐지 카드 (심각도·MITRE)
+**SOC 관제 대시보드 (실데이터)**
 
-**탐지 · 대응 · 하드닝**
-- `slack-suspicious-success.png` — known-good 아닌 성공 로그인 알림(침해 가능성)
-- `fail2ban-ban.png` — fail2ban 자동 차단 (iptables)
-- `es-auth.png` — ES/Kibana xpack 인증 적용
+![SOC 대시보드 — 침해 의심·고유 공격 IP·탐지 큐·공격 추이](docs/img/soc-dashboard_1.png)
+![SOC 대시보드 — 성공 로그인 출처(접근 감사)·타겟 호스트·노린 계정·공격 ASN](docs/img/soc-dashboard_2.png)
+![공격 출발지 세계 지도 (국가별 공격량)](docs/img/soc-dashboard_3.png)
+![공격 출처 ASN Top — DigitalOcean 최다 (개별 IP엔 안 보이던 신호를 ASN으로 발견)](docs/img/top-asn.png)
 
-**v2 · 자동화**
-- `slack-threat-intel.png` — 위협 인텔(AbuseIPDB) 붙은 탐지 카드
-- `reputation-dist.png` — 상위 공격자 평판 분포 (50% 상습범·27% 미신고)
-- `ansible-recap.png` — Ansible 멱등 배포 (PLAY RECAP, changed=0)
+**탐지 룰 — 예방과 역할 분리**
+
+![Kibana 탐지 룰: brute-force 비활성화(버스트는 fail2ban 전담) · 성공 로그인·저속 스프레이 활성](docs/img/rules.png)
+
+**탐지 알림 (Slack)**
+
+![SSH brute-force 탐지 카드 (심각도·MITRE·위협 인텔)](docs/img/slack-bruteforce.png)
+![known-good 아닌 성공 로그인 — 침해 가능성 (MITRE T1078)](docs/img/slack-suspicious-success.png)
+![저속·계정 스프레이 — 버스트 방어 회피 (MITRE T1110.003)](docs/img/slack_lowandslow.jpg)
+
+**대응 · 위협 인텔**
+
+![fail2ban 자동 차단 (iptables)](docs/img/fail2ban-ban.png)
+![상위 공격자 평판 분포 — 절반이 상습범·27% 미신고 (AbuseIPDB)](docs/img/reputation-dist.png)
