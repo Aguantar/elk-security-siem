@@ -76,7 +76,7 @@
 **보강 v3 (2026-06-24)**: `Connection (reset|closed) by (authenticating|invalid) user <X> <IP>`, `Disconnected from ... user <X> <IP>` 패턴 추가 → 이 라인들의 *계정명* 회수. SSH user.name 보유 **28,875 → 51,502**. (root brute-force가 reset으로 끊긴 케이스가 다수였음.)
 
 ### 4. 집계 단위 = 카디널리티에 맞춤 (ASN 인리치)
-- SSH 고유 공격 IP **3,146개**, Top10 집중도 **15.3%**, 고유 국가 89 → 개별 IP "Top" 차트는 롱테일이라 저신호.
+- SSH 고유 공격 IP **3,146개**(2026-06 측정), Top10 집중도 **15.3%**, 고유 국가 89 → 개별 IP "Top" 차트는 롱테일이라 저신호.
 - 대응: **ASN(호스팅업체) 인리치 추가**(geoip GeoLite2-ASN → `source.as.organization_name`).
 - 결과: **DigitalOcean 20,131건(~34%)**, Unmanaged Ltd 3,475, Techoff 3,036 ... → 한 단계 올리니 신호 명확.
 - 권장 패널: 고유IP수(규모) · 국가/ASN(어디서) · 시간추세 · 노린계정 · 성공vs실패. Top IP는 "차단 후보 명단"으로 용도 한정.
