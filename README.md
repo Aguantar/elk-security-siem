@@ -77,7 +77,7 @@ ansible-playbook deploy-elk.yml           # 적용 (멱등: 재실행 시 change
 
 **SOC 관제 대시보드 (실데이터)**
 
-![SOC 대시보드 — 침해 의심·고유 공격 IP·탐지 큐·공격 추이](docs/img/soc-dashboard_1.png)
+![SOC 대시보드 — 침해 의심·고유 공격 IP·탐지 총계·brute-force 알림 큐](docs/img/total.png)
 ![SOC 대시보드 — 성공 로그인 출처(접근 감사)·타겟 호스트·노린 계정·공격 ASN](docs/img/soc-dashboard_2.png)
 ![공격 출발지 세계 지도 (국가별 공격량)](docs/img/soc-dashboard_3.png)
 ![공격 출처 ASN Top — DigitalOcean 최다 (개별 IP엔 안 보이던 신호를 ASN으로 발견)](docs/img/top-asn.png)
