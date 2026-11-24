@@ -79,9 +79,10 @@ ansible-playbook deploy-elk.yml --check --diff   # dry-run
 | `--limit oracle` 1회차 (11:32:13 UTC) | `ok=8 changed=0 failed=0` |
 | `--limit oracle` 2회차 (11:32:22 UTC) | `ok=8 changed=0 failed=0` |
 | `--limit minipc --check --diff` | 실패 - `sudo: a password is required`(`-K` 없이 실행). 판정 불가 |
+| `--limit minipc --check --diff -K` (2026-11-24) | `ok=3 changed=0 failed=0`, diff 없음 |
 
 - 적용 전후 `StartedAt`(elasticsearch 06-27 05:07:38, kibana 06-27 05:16:42)과 filebeat `ActiveEnterTimestamp`(06-27 05:18:16)가 그대로다. 재시작 없음. Kibana `/api/status` 200.
-- minipc 는 `/etc/filebeat/filebeat.yml` 이 root 600 이라 내용 대조를 못 했다. 렌더링 결과와 실제 파일의 크기는 같다(643바이트). 크기만으로 동일하다고 볼 수는 없으므로 `-K` 로 `--check --diff` 를 돌려야 확정된다.
+- minipc 는 `/etc/filebeat/filebeat.yml` 이 root 600 이라 내용 대조를 못 했다. 렌더링 결과와 실제 파일의 크기는 같다(643바이트). 크기만으로는 동일하다고 볼 수 없었고, 2026-11-24 `-K` 로 `--check --diff` 를 돌려 `changed=0` 을 확인했다. 두 노드 모두 플레이북과 실제 구성이 일치한다.
 
 ### 아직 코드에 없는 것
 ingest pipeline·인덱스 템플릿·enrich 정책은 ES API 로 직접 넣었고 플레이북에 없다. 이번에는 적용 코드를 쓰지 않고 현재 정의만 `elk/pipelines/` 에 덤프했다(ES 8.18.1, 2026-11-24).
