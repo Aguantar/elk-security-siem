@@ -1,0 +1,75 @@
+{
+  "index_templates": [
+    {
+      "index_template": {
+        "composed_of": [],
+        "data_stream": {
+          "allow_custom_routing": false,
+          "hidden": false
+        },
+        "index_patterns": [
+          "seclogs-*"
+        ],
+        "priority": 500,
+        "template": {
+          "mappings": {
+            "properties": {
+              "@timestamp": {
+                "type": "date"
+              },
+              "host_name": {
+                "type": "keyword"
+              },
+              "log_source": {
+                "type": "keyword"
+              },
+              "message": {
+                "type": "text"
+              },
+              "source": {
+                "properties": {
+                  "geo": {
+                    "properties": {
+                      "continent_name": {
+                        "type": "keyword"
+                      },
+                      "country_iso_code": {
+                        "type": "keyword"
+                      },
+                      "country_name": {
+                        "type": "keyword"
+                      },
+                      "location": {
+                        "type": "geo_point"
+                      }
+                    }
+                  },
+                  "ip": {
+                    "type": "ip"
+                  },
+                  "port": {
+                    "type": "long"
+                  }
+                }
+              },
+              "user": {
+                "properties": {
+                  "name": {
+                    "type": "keyword"
+                  }
+                }
+              }
+            }
+          },
+          "settings": {
+            "index": {
+              "default_pipeline": "seclogs-parse",
+              "number_of_replicas": "0"
+            }
+          }
+        }
+      },
+      "name": "seclogs-tmpl"
+    }
+  ]
+}

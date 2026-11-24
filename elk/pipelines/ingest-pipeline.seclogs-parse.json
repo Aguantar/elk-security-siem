@@ -1,0 +1,104 @@
+{
+  "seclogs-parse": {
+    "description": "Caddy JSON + SSH grok + event.outcome + GeoIP + ASN (v6)",
+    "processors": [
+      {
+        "json": {
+          "field": "message",
+          "if": "ctx.log_source == 'caddy'",
+          "ignore_failure": true,
+          "target_field": "caddy"
+        }
+      },
+      {
+        "set": {
+          "copy_from": "caddy.request.client_ip",
+          "field": "source.ip",
+          "if": "ctx.caddy?.request?.client_ip != null"
+        }
+      },
+      {
+        "set": {
+          "copy_from": "caddy.request.uri",
+          "field": "url.path",
+          "if": "ctx.caddy?.request?.uri != null"
+        }
+      },
+      {
+        "set": {
+          "copy_from": "caddy.request.method",
+          "field": "http.method",
+          "if": "ctx.caddy?.request?.method != null"
+        }
+      },
+      {
+        "set": {
+          "copy_from": "caddy.status",
+          "field": "http.status",
+          "if": "ctx.caddy?.request != null && ctx.caddy?.status != null"
+        }
+      },
+      {
+        "grok": {
+          "field": "message",
+          "if": "ctx.log_source == 'ssh'",
+          "ignore_failure": true,
+          "patterns": [
+            "for invalid user %{USERNAME:user.name} from %{IP:source.ip} port %{NUMBER:source.port:long}",
+            "for %{USERNAME:user.name} from %{IP:source.ip} port %{NUMBER:source.port:long}",
+            "Invalid user %{USERNAME:user.name} from %{IP:source.ip}",
+            "from invalid user %{USERNAME:user.name} %{IP:source.ip} port %{NUMBER:source.port:long}",
+            "Connection (reset|closed) by (invalid|authenticating) user %{USERNAME:user.name} %{IP:source.ip} port",
+            "Disconnected from (invalid user |authenticating user )?%{USERNAME:user.name} %{IP:source.ip} port",
+            "by (invalid|authenticating) user %{USERNAME:user.name} %{IP:source.ip}",
+            "Connection (reset|closed) by %{IP:source.ip} port",
+            "Received disconnect from %{IP:source.ip}",
+            "from %{IP:source.ip} port %{NUMBER:source.port:long}",
+            "from %{IP:source.ip}"
+          ]
+        }
+      },
+      {
+        "script": {
+          "if": "ctx.log_source == 'ssh'",
+          "source": "String m = ctx.message; if (m == null) { return; } String o = null; if (m.contains('Accepted')) { o = 'success'; } else if (m.contains('Failed ') || m.contains('Invalid user') || m.contains('authentication failure') || m.contains('not allowed') || m.contains('maximum authentication')) { o = 'failure'; } else if (m.contains('Connection closed by') || m.contains('Connection reset by') || m.contains('Disconnected from') || m.contains('Received disconnect')) { o = 'probe'; } if (o != null) { if (ctx.event == null) { ctx.event = new HashMap(); } ctx.event.outcome = o; }"
+        }
+      },
+      {
+        "geoip": {
+          "field": "source.ip",
+          "ignore_missing": true,
+          "target_field": "source.geo"
+        }
+      },
+      {
+        "geoip": {
+          "database_file": "GeoLite2-ASN.mmdb",
+          "field": "source.ip",
+          "ignore_missing": true,
+          "properties": [
+            "asn",
+            "organization_name"
+          ],
+          "target_field": "source.as"
+        }
+      },
+      {
+        "enrich": {
+          "field": "source.ip",
+          "if": "ctx.source?.ip != null",
+          "ignore_missing": true,
+          "max_matches": 1,
+          "policy_name": "abuseipdb-policy",
+          "target_field": "threat_intel"
+        }
+      },
+      {
+        "remove": {
+          "field": "caddy",
+          "ignore_missing": true
+        }
+      }
+    ]
+  }
+}
